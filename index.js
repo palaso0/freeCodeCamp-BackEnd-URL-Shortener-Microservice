@@ -8,7 +8,7 @@ const bodyParser = require('body-parser')
 const port = process.env.PORT || 3000;
 
 app.use(cors());
-app.use(bodyParser.urlencoded({ extended: true }))
+app.use(bodyParser.urlencoded({ extended: false }))
 app.use('/public', express.static(`${process.cwd()}/public`));
 
 app.get('/', function (req, res) {
@@ -39,6 +39,9 @@ const isLinkInArray = (url) => {
 const getOriginalByShort = (short) => {
   return links.find(link => link.short_url == short).original_url
 }
+const getShortByOriginal = (original) => {
+  return links.find(link => link.original_url == original).short_url
+}
 
 var links = []
 app.post('/api/shorturl', (req, res) => {
@@ -47,10 +50,15 @@ app.post('/api/shorturl', (req, res) => {
     if (!isLinkInArray(newLink)) {
       const object = {
         original_url: newLink,
-        short_url: links.length.toString()
+        short_url: links.length
       }
       links.push(object)
       res.send(object)
+    } else {
+      res.send({
+        original_url: newLink,
+        short_url: +getShortByOriginal(newLink)
+      })
     }
   } else {
     res.send({
@@ -61,7 +69,6 @@ app.post('/api/shorturl', (req, res) => {
 })
 
 app.get('/api/shorturl/:url?', (req, res) => {
-  // res.redirect("https://www.freecodecamp.org/")
   let shortUrl = req.params.url;
   if (isShortInArray(shortUrl)) {
     const original = getOriginalByShort(shortUrl)
